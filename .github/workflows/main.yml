@@ -1,0 +1,54 @@
+name: React Native CI/CD
+#the name of the workflow
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build and Deploy React Native App
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        # Récupérer le code source depuis GitHub
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Install dependencies
+        run: npm install
+        # Installer les librairies nécessaires au projet.
+
+      - name: Run tests
+        run: npm test
+        #Vérifier que le code fonctionne correctement avant de le compiler.
+
+      # 🔥 Build Android APK
+      - name: Setup Java
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: 17
+
+      - name: Build Android App
+        run: cd android && ./gradlew assembleRelease
+        #Compile l’application en mode production (release), générant un fichier APK prêt à être installé.
+        # But : Générer l’APK de l’application React Native.
+
+      - name: Upload APK to Firebase
+        uses: wzieba/Firebase-Distribution-Github-Action@v1
+        #Utilise une action GitHub pour envoyer l'APK à Firebase App Distribution.
+        with:
+          appId: ${{ secrets.FIREBASE_APP_ID }}
+          token: ${{ secrets.FIREBASE_AUTH_TOKEN }}
+          groups: testers
+          file: android/app/build/outputs/apk/release/app-release.apk
